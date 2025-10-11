@@ -3,8 +3,7 @@
 # Base image
 FROM python:3.11-slim
 
-# Install Git and Git LFS (Requires apt to install OS-level dependencies)
-# Yeh steps ab Pre-Deploy Command ka kaam karenge
+# Install Git and Git LFS (Needed for the pull command)
 RUN apt-get update && apt-get install -y git git-lfs && \
     rm -rf /var/lib/apt/lists/*
 
@@ -15,14 +14,16 @@ ENV POETRY_NO_INTERACTION 1
 # Set the working directory inside the container
 WORKDIR /app
 
-# Crucial Step: Pull LFS files inside the container context
-# Isse artifacts files sync ho jayengi aur 'pyproject.toml' error theek ho jayega
+# ----------------------------------------------------
+# CRITICAL REORDERING: Pull LFS files BEFORE copying dependencies
+# This is our last hope for fixing the synchronization issue.
+# ----------------------------------------------------
 RUN git lfs pull --include "*"
 
 # 1. Install Poetry
 RUN pip install poetry
 
-# 2. Copy Poetry dependency files 
+# 2. Copy Poetry dependency files (Now LFS files should be synched)
 COPY backend/pyproject.toml backend/poetry.lock /app/
 
 # 3. Install dependencies from lock file
