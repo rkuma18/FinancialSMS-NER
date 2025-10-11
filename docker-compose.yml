@@ -4,29 +4,61 @@ services:
   # --- 1. FastAPI Backend Service ---
   backend:
     build:
-      context: ./backend  # Path to the directory containing the Dockerfile
+      # Is folder mein apka backend/Dockerfile maujood hona chahiye
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: ner_fastapi_backend
     ports:
-      - "8000:8000"     # Map container port 8000 to host port 8000
-    volumes:
-      # Mount the artifacts folder so the model is available inside the container
-      - ./artifacts:/app/artifacts
-    environment:
-      # Optional: Set environment variables for model path or logging if needed
-      - MODEL_PATH=/app/artifacts/best_ner_model
+      # Host:Container
+      - "8000:8000"
+    # IMPORTANT: Model artifacts ab Docker image ke andar hain (Dockerfile ke zariye), 
+    # isliye volume ki zaroorat nahi hai.
     restart: always
-
+    
   # --- 2. Streamlit Frontend Service ---
   frontend:
     build:
-      context: ./frontend # Path to the directory containing the Dockerfile
+      # Is folder mein apka streamlit_app.py aur uske liye Dockerfile maujood hona chahiye
+      context: .
+      dockerfile: frontend/Dockerfile 
     container_name: ner_streamlit_frontend
     ports:
-      - "8501:8501"     # Map container port 8501 (Streamlit default) to host port 8501
+      - "8501:8501"
     depends_on:
-      - backend         # Ensure backend starts before frontend
-    # IMPORTANT: Update API_URL in your Streamlit code (client.py)
-    # The frontend needs to talk to the backend using the SERVICE NAME (backend)
+      - backend
+    
+    # Environment Variable ko Streamlit code (streamlit_app.py) se match karein
     environment:
-      - API_URL=http://backend:8000/predict # Set API URL as an environment variable
+      # Frontend ab is service name 'backend' aur port '8000' ke through communicate karega.
+      - API_BASE_URL=http://backend:8000 
     restart: always
+```
+### 🛑 Important Note on File Structure
+
+Upar diye gaye `docker-compose.yml` ke liye, aapka file structure aisa hona chahiye:
+
+```
+.
+├── backend/
+│   ├── main.py
+│   └── Dockerfile  (FastAPI wala)
+├── frontend/
+│   └── Dockerfile  (Streamlit wala)
+├── artifacts/
+│   └── best_ner_model/ (Aapka model folder)
+├── Dockerfile      (Yeh ab nahi chahiye)
+├── docker-compose.yml  <-- Naya file path: context: .
+└── streamlit_app.py  <-- Naya file path: context: .
+```
+
+Agar aapka Streamlit client code **`frontend/Dockerfile`** use karta hai, toh aapko `frontend` folder mein ek `Dockerfile` banana padega aur `streamlit_app.py` ko bhi us folder mein move karna padega, ya phir `docker-compose` context ko adjust karna padega.
+
+Main suggest karta hoon ki aap **`frontend/Dockerfile`** ko *move* karke **`streamlit.Dockerfile`** bana dein aur usmein **`streamlit_app.py`** ko run karein:
+
+```yaml
+  # ... (frontend service mein badlav)
+  frontend:
+    build:
+      context: .
+      dockerfile: streamlit.Dockerfile
+    # ...
