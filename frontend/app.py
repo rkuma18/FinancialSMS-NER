@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-import os # Docker Compose compatibility ke liye zaroori
+import os
 from typing import TYPE_CHECKING
 
 import requests
@@ -20,9 +20,14 @@ logger = logging.getLogger(__name__)
 
 # --- Constants ---
 
-# IMPORTANT: Docker Compose ke liye URL ko service name ('backend') par set kiya gaya hai.
-# Agar environment variable set nahi hai (local run ke liye), toh 'http://backend:8000/predict' use karein.
-API_URL = os.getenv("API_URL", "http://backend:8000/predict")
+# ****** YAHAN PAR CHANGE KIYA GAYA HAI ******
+# Render Deployment ke liye, API URL ko hardcode kiya gaya hai.
+# 'financial-sms-ner-app.onrender.com' ko aapke actual live URL se badalna na bhulein!
+RENDER_BASE_URL = "https://financial-sms-ner-app.onrender.com" 
+API_URL = f"{RENDER_BASE_URL}/predict"
+
+# Purana Docker Compose Line:
+# API_URL = os.getenv("API_URL", "http://backend:8000/predict")
 
 DEFAULT_SMS = (
     "Rs. 5000 credited to A/c XXXXX1234 on 15/09/2025 at 10:30 PM by HDFC Bank. OTP 123456."
@@ -37,6 +42,8 @@ HIGHLIGHT_STYLE = (
 
 def fetch_entities(text: str) -> List[Entity]:
     """Call the FastAPI NER prediction endpoint."""
+    # Ensure API_URL is correct before making request
+    logger.info(f"Sending request to API_URL: {API_URL}")
     response = requests.post(API_URL, json={"text": text}, timeout=30)
     # Agar status code 4xx ya 5xx hai toh exception raise hoga
     response.raise_for_status() 
