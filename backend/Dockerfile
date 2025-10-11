@@ -1,21 +1,36 @@
-# Base image for Python applications (A lightweight image is preferred)
-FROM python:3.10-slim
+# backend/Dockerfile
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV APP_HOME=/app
+# Base image
+FROM python:3.11-slim
 
-# Create and set the working directory
-WORKDIR $APP_HOME
+# Set environment variables for non-interactive mode
+ENV PYTHONUNBUFFERED 1
+ENV POETRY_NO_INTERACTION 1
 
-# Copy only the requirements file first to leverage Docker cache
-COPY requirements.txt .
+# Set the working directory inside the container
+WORKDIR /app
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# 1. Install Poetry
+RUN pip install poetry
 
-# Copy the rest of the application code
-COPY . .
+# 2. Copy Poetry dependency files (pyproject.toml and poetry.lock)
+# Render's Root Directory is 'backend', so paths are relative to 'backend'
+COPY pyproject.toml poetry.lock /app/
 
-# --host 0.0.0.0 is crucial for Docker containers
+# 3. Install dependencies from lock file
+# "--no-root" ensures it only installs dependencies, not the current package
+RUN poetry install --no-root --only main
+
+# 4. Copy the large model artifacts from the repository root (../artifacts)
+# This is the crucial fix for the "Model directory not found" error
+COPY ../artifacts /app/artifacts
+
+# 5. Copy the main application code (main.py and other source files)
+COPY . /app
+
+# 6. Expose the port (FastAPI's default)
+EXPOSE 8000
+
+# 7. Start the Uvicorn server
+# The --reload flag should be removed for production/deployment
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
