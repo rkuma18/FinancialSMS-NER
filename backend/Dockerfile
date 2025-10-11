@@ -1,34 +1,33 @@
 FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y git git-lfs && \
-    rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    git-lfs \
+    && rm -rf /var/lib/apt/lists/*
 
+# Initialize Git LFS
 RUN git lfs install
 
-ENV PYTHONUNBUFFERED 1
-ENV POETRY_NO_INTERACTION 1
+ENV PYTHONUNBUFFERED=1
+ENV POETRY_NO_INTERACTION=1
 
 WORKDIR /app
 
-# Copy only what's needed for LFS pull
-COPY .git /app/.git
-COPY .gitattributes /app/.gitattributes
-
-# Pull LFS files
-RUN git lfs pull
+# Clone the repository WITH LFS files during build
+# This bypasses the issue of Render not pulling LFS files
+RUN git clone https://github.com/rkuma18/financial-sms-ner-app.git /tmp/repo && \
+    cd /tmp/repo && \
+    git lfs pull && \
+    cp -r /tmp/repo/* /app/ && \
+    cp -r /tmp/repo/.* /app/ 2>/dev/null || true && \
+    rm -rf /tmp/repo
 
 # Install Poetry
 RUN pip install poetry
 
-# Copy dependency files (which should now be available)
-COPY backend/pyproject.toml backend/poetry.lock /app/backend/
-
-# Install dependencies (cached unless these files change)
+# Install Python dependencies
 RUN cd backend && poetry install --no-root --only main
-
-# Copy the rest of the application
-COPY artifacts /app/artifacts
-COPY backend /app/backend
 
 EXPOSE 8000
 
