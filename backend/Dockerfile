@@ -13,19 +13,19 @@ WORKDIR /app
 # 1. Install Poetry
 RUN pip install poetry
 
-# 2. Copy Poetry dependency files (now from repo root)
-# Since Docker Context is set to repo root, we use backend/pyproject.toml
+# 2. Copy Poetry dependency files 
+# Since Docker Context is repo root, we use backend/pyproject.toml
 COPY backend/pyproject.toml backend/poetry.lock /app/
 
 # 3. Install dependencies from lock file
 RUN poetry install --no-root --only main
 
 # 4. Copy the large model artifacts from the repository root
-# 'artifacts' folder repo root par hai, aur Docker context bhi repo root hai.
+# 'artifacts' folder repo root par hai, aur woh direct accessible hai
 COPY artifacts /app/artifacts
 
 # 5. Copy the main backend application code
-# Backend code ko /app/backend ke andar copy kar rahe hain
+# Backend folder ko /app/backend ke andar copy kar rahe hain
 COPY backend /app/backend
 
 # 6. Expose the port (FastAPI's default)
