@@ -1,35 +1,17 @@
-# Dockerfile
-
 FROM python:3.11-slim
 
-# Install system dependencies (Git and Git LFS)
-RUN apt-get update && apt-get install -y \
-    git \
-    git-lfs \
-    && rm -rf /var/lib/apt/lists/*
-
-# Initialize Git LFS
-RUN git lfs install
+RUN apt-get update && apt-get install -y git git-lfs && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1
-ENV POETRY_NO_INTERACTION=1
 
 WORKDIR /app
 
-# Copy the entire repository content into the container
-COPY . /app
+# Copy everything
+COPY . /app/
 
-# Ensure git trusts the copied working tree, then fetch LFS assets.
-RUN git config --global --add safe.directory /app && \
-    git lfs pull --include "*"
+# Install dependencies using pip
+RUN pip install --no-cache-dir -r backend/requirements.txt
 
-# Install Poetry
-RUN pip install poetry
+EXPOSE 7860
 
-# Install Python dependencies from the backend module
-RUN cd backend && poetry install --no-root --only main
-
-EXPOSE 8000
-
-# Start the Uvicorn server (main:app is inside the backend directory)
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860"]

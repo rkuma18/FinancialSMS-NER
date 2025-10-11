@@ -1,64 +1,21 @@
-version: '3.8'
-
 services:
-  # --- 1. FastAPI Backend Service ---
   backend:
     build:
-      # Is folder mein apka backend/Dockerfile maujood hona chahiye
       context: .
       dockerfile: backend/Dockerfile
-    container_name: ner_fastapi_backend
     ports:
-      # Host:Container
-      - "8000:8000"
-    # IMPORTANT: Model artifacts ab Docker image ke andar hain (Dockerfile ke zariye), 
-    # isliye volume ki zaroorat nahi hai.
-    restart: always
-    
-  # --- 2. Streamlit Frontend Service ---
+      - "7860:7860"
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./backend:/app/backend
+
   frontend:
     build:
-      # Is folder mein apka streamlit_app.py aur uske liye Dockerfile maujood hona chahiye
       context: .
-      dockerfile: frontend/Dockerfile 
-    container_name: ner_streamlit_frontend
+      dockerfile: frontend/Dockerfile
     ports:
       - "8501:8501"
     depends_on:
       - backend
-    
-    # Environment Variable ko Streamlit code (streamlit_app.py) se match karein
     environment:
-      # Frontend ab is service name 'backend' aur port '8000' ke through communicate karega.
-      - API_BASE_URL=http://backend:8000 
-    restart: always
-```
-### 🛑 Important Note on File Structure
-
-Upar diye gaye `docker-compose.yml` ke liye, aapka file structure aisa hona chahiye:
-
-```
-.
-├── backend/
-│   ├── main.py
-│   └── Dockerfile  (FastAPI wala)
-├── frontend/
-│   └── Dockerfile  (Streamlit wala)
-├── artifacts/
-│   └── best_ner_model/ (Aapka model folder)
-├── Dockerfile      (Yeh ab nahi chahiye)
-├── docker-compose.yml  <-- Naya file path: context: .
-└── streamlit_app.py  <-- Naya file path: context: .
-```
-
-Agar aapka Streamlit client code **`frontend/Dockerfile`** use karta hai, toh aapko `frontend` folder mein ek `Dockerfile` banana padega aur `streamlit_app.py` ko bhi us folder mein move karna padega, ya phir `docker-compose` context ko adjust karna padega.
-
-Main suggest karta hoon ki aap **`frontend/Dockerfile`** ko *move* karke **`streamlit.Dockerfile`** bana dein aur usmein **`streamlit_app.py`** ko run karein:
-
-```yaml
-  # ... (frontend service mein badlav)
-  frontend:
-    build:
-      context: .
-      dockerfile: streamlit.Dockerfile
-    # ...
+      - BACKEND_URL=http://backend:7860
