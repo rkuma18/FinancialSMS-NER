@@ -1,4 +1,4 @@
-# Fine-Tuned DistilBERT for NER 
+# Financial SMS Named Entity Recognition 
 
 A production-ready Named Entity Recognition (NER) system fine-tuned on DistilBERT for extracting entities from SMS messages. Achieves **96.20% F1-score** on test data with robust preprocessing, training pipelines, and a Streamlit web interface.
 
@@ -432,7 +432,7 @@ Contributions are welcome! Areas for improvement:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
